@@ -1,0 +1,15 @@
+[Unit]
+Description=Minecraft Forge Docker Server
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+Restart=on-failure
+ExecStart=/usr/bin/docker start -a mc-server
+ExecStop=/usr/bin/docker stop -t 120 mc-server
+ExecStopPost=/opt/minecraft/backup_and_upload.sh
+TimeoutStopSec=150
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,32 @@
+# Local development files (Minecraft world data)
+world/
+logs/
+
+# Docker
+.docker/
+.dockerignore
+
+# Secrets and credentials
+.env
+*.pem
+*.key
+credentials.json
+
+# Terraform
+terraform.tfstate*
+terraform.tfvars
+**/.terraform/
+**/.terraform.lock.hcl
+crash.log
+
+# OS and IDE
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Deployment artifacts
+*.tar.gz
+backups/

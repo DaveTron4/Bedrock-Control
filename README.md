@@ -51,27 +51,221 @@ The architecture is designed to be **event-driven**. We don't poll; we react.
 
 ---
 
-## 🔐 Security & Operations
+## � Implementation Status
 
-* **Identity:** No long-term AWS Access Keys are stored on the Raspberry Pi. We use X.509 certificates to exchange for temporary sessions.
-* **Networking:** No ports are opened on the home network. The bot uses an outbound WebSocket to communicate with Discord.
-* **Observability:** A **CloudWatch Dashboard** monitors CPU, memory usage, and billing metrics in real-time.
-* **Automation:** All AWS resources are managed via **Terraform**. To deploy the entire stack, simply run:
-    ```bash
-    terraform apply
-    ```
+### ✅ Completed
+- **Discord Bot (TypeScript)**: Modular slash command structure with `/start`, `/stop`, `/status`
+- **AWS EC2 Integration**: Start/stop EC2 instances via AWS SDK
+- **Dockerized Minecraft Server**: Forge 1.20.1 running in Docker on m7i-flex.large
+- **S3 World Persistence**: Automatic backup on shutdown, restore on startup
+- **Systemd Service**: Graceful server shutdown with automatic world backup
+- **IAM Security**: EC2 instance role with S3 access (no hardcoded keys on instance)
+
+### 🔄 In Progress
+- **Lambda Janitor**: Scheduled checks for idle players (15-minute intervals)
+- **CloudWatch Monitoring**: Real-time metrics and cost tracking
+- **Terraform IaC**: Automated EC2 + S3 + IAM provisioning
+
+### ⏳ TODO
+- **Production Bot Deployment**: Deploy bot to Raspberry Pi in Docker
+- **IAM Roles Anywhere**: X.509 certificate-based auth for Raspberry Pi
+- **Cloudflare DDNS**: Dynamic DNS integration for stable server address
+- **RCON Protocol**: Player count monitoring for auto-shutdown logic
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Quick Start (Local Development)
 
-1.  **Infrastructure:** Navigate to `/terraform` and run `terraform init && terraform apply`.
-2.  **Bot Deployment:** Build the Docker image on your Raspberry Pi:
-    ```bash
-    docker-compose up -d --build
-    ```
-3.  **Certificates:** Ensure your Pi's certificate is registered in the **AWS IAM Roles Anywhere** trust anchor.
+### Prerequisites
+- **Node.js 18+** and npm
+- **Discord Bot Token** (from [Discord Developer Portal](https://discord.com/developers/applications))
+- **AWS Credentials** (Access Key ID + Secret Key, or `aws configure`)
+- **EC2 Instance ID** (the running Minecraft server)
+
+### 1. Clone & Install
+
+```bash
+git clone <repo-url>
+cd Bedrock-Control/bot
+npm install
+```
+
+### 2. Configure Environment
+
+Copy your `.env` file (already in the repo):
+```powershell
+# bot/.env
+DISCORD_TOKEN=your-bot-token
+DISCORD_CLIENT_ID=your-client-id
+EC2_INSTANCE_ID=i-xxxxx
+AWS_REGION=us-east-1
+```
+
+### 3. Configure AWS Credentials
+
+**Option A: AWS CLI (Recommended)**
+```bash
+aws configure
+# Enter Access Key ID, Secret Key, region (us-east-1), output (json)
+```
+
+**Option B: Environment Variables**
+```powershell
+$env:AWS_ACCESS_KEY_ID="your-key"
+$env:AWS_SECRET_ACCESS_KEY="your-secret"
+```
+
+### 4. Run the Bot
+
+```bash
+npm run dev
+```
+
+You should see:
+```
+[✅] Bedrock Control online! Logged in as BotName#0000
+[✅] Successfully registered commands 3
+```
+
+### 5. Use in Discord
+
+In any Discord channel, type:
+- `/start` — Start the Minecraft server
+- `/stop` — Stop server & backup world
+- `/status` — Check server status
 
 ---
 
-> **Note:** This project is currently configured for Minecraft Java Edition. Ensure your EC2 `Security Group` allows traffic on port `25565`.
+## 📁 Project Structure
+
+```
+Bedrock-Control/
+├── bot/
+│   ├── src/
+│   │   ├── commands/
+│   │   │   ├── start.ts        ← Start EC2 instance
+│   │   │   ├── stop.ts         ← Stop EC2 instance
+│   │   │   ├── status.ts       ← Check server status
+│   │   │   └── register.ts     ← Register all commands
+│   │   ├── services/
+│   │   │   └── aws-client.ts   ← AWS EC2 operations
+│   │   ├── types/
+│   │   │   └── index.ts        ← TypeScript interfaces
+│   │   ├── utils/
+│   │   │   ├── config.ts       ← Config & env vars
+│   │   │   └── logger.ts       ← Logging utilities
+│   │   └── index.ts            ← Main bot entry
+│   ├── .env                    ← Environment variables
+│   └── package.json
+├── infra/
+│   ├── docker/
+│   │   ├── Dockerfile         ← Minecraft server image
+│   │   └── docker-compose.yml
+│   ├── scripts/
+│   │   ├── bootstrap-docker.sh      ← One-time EC2 setup
+│   │   ├── backup_and_upload.sh     ← World backup to S3
+│   │   └── restore_from_s3.sh       ← World restore from S3
+│   ├── minecraft-docker.service    ← Systemd unit
+│   ├── iam-policy.json             ← EC2 IAM permissions
+│   └── DEPLOYMENT.md               ← Full deployment guide
+└── README.md
+```
+
+---
+
+## 🔧 Architecture Details
+
+### Control Plane (Your PC / Raspberry Pi)
+- Discord.js bot runs locally or in Docker
+- Uses AWS SDK to call EC2 API
+- No long-lived credentials stored (uses `aws configure` or IAM Roles Anywhere)
+
+### Data Plane (AWS)
+- **EC2 m7i-flex.large**: Runs Docker container with Forge Minecraft
+- **S3 Bucket**: Stores world backups (compresses on shutdown, restores on startup)
+- **Systemd Service**: Manages graceful start/stop with automatic backups
+- **IAM Role**: Grants EC2 permission to access S3 (least privilege)
+
+### Key Features
+- ✅ **Automatic world persistence**: S3 backups on shutdown, restored on boot
+- ✅ **Graceful shutdown**: 120-second timeout for Minecraft to save properly
+- ✅ **Cost optimized**: ~$0 when idle, ~$0.20/hour when running (m7i-flex.large)
+- ✅ **Modular design**: Easy to add commands (`/whitelist`, `/restart`, etc.)
+
+---
+
+## 🛠️ Adding New Commands
+
+1. Create `src/commands/mycommand.ts`:
+```typescript
+import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
+import { Logger } from '../utils/logger';
+import type { SlashCommand } from '../types';
+
+const command: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('mycommand')
+    .setDescription('Description'),
+
+  async execute(interaction: ChatInputCommandInteraction) {
+    await interaction.reply('Response');
+  },
+};
+
+export default command;
+```
+
+2. Add to `src/commands/register.ts`:
+```typescript
+import myCommand from './mycommand';
+
+export const commands: Record<string, SlashCommand> = {
+  start: startCommand,
+  stop: stopCommand,
+  status: statusCommand,
+  mycommand: myCommand,  // ← Add here
+};
+```
+
+3. Restart bot — command auto-registers!
+
+---
+
+## 📚 Documentation
+
+- **[AWS & Server Setup Guide](AWS_SETUP.md)** — Detailed EC2, S3, IAM configuration
+- **[Deployment Guide](infra/DEPLOYMENT.md)** — How to deploy Minecraft server to EC2
+- **[Hand-off Document](HANDOFF.md)** — Architecture overview for new team members
+
+---
+
+## 🔐 Security Best Practices
+
+- ✅ **No hardcoded credentials** on EC2 — uses IAM role
+- ✅ **Least privilege IAM policy** — EC2 can only access its own S3 bucket
+- ✅ **X.509 certificates** (Roles Anywhere) for Raspberry Pi authentication
+- ✅ **Ephemeral instances** — EC2 terminates after shutdown, state only in S3
+- ✅ **Environment variables** — Sensitive data in `.env`, never committed
+
+---
+
+## 💰 Cost Estimate (Monthly)
+
+| Resource | Hourly | Monthly (8 hrs/day) |
+|----------|--------|---------------------|
+| m7i-flex.large EC2 | $0.20 | ~$48 |
+| S3 storage (~1GB) | — | ~$0.02 |
+| Data transfer | — | ~$0.50 |
+| **Total** | — | **~$50/month** |
+
+*(Assumes 8 hours/day usage; drops to $0 when stopped)*
+
+---
+
+## 📝 License
+
+MIT
+
+---
+
+> **Questions?** Check the [AWS Setup Guide](AWS_SETUP.md) or [Deployment Guide](infra/DEPLOYMENT.md).

@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  minecraft:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: local-forge:latest
+    container_name: mc-server
+    ports:
+      - "25565:25565"
+    volumes:
+      - ./world:/data/world
+      - ./logs:/data/logs
+    environment:
+      JVM_XMS: 1G
+      JVM_XMX: 6G
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+
+  # Optional: Add a companion container for automated backups (cron-like)
+  backup-agent:
+    image: amazon/aws-cli:latest
+    container_name: mc-backup-agent
+    volumes:
+      - ./world:/opt/minecraft/world:ro
+      - ./logs:/opt/minecraft/logs:ro
+    environment:
+      AWS_DEFAULT_REGION: us-east-1
+      # AWS credentials should be injected via environment or IAM role
+    restart: unless-stopped
+    # Run backup every 30 minutes (customize as needed)
+    entrypoint:
+      - sh
+      - -c
+      - |
+        while true; do
+          sleep 1800
+          tar -C /opt/minecraft -czf /tmp/backup.tar.gz world/ logs/ &&
+          aws s3 cp /tmp/backup.tar.gz s3://my-bedrock-control-worlds/backups/world-$(date +%s).tar.gz
+        done
