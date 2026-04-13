@@ -8,6 +8,7 @@ This guide explains how to deploy the Dockerized Minecraft Forge server to an EC
 - An EC2 instance running Ubuntu 22.04 LTS (m7i-flex.large or similar)
 - SSH access to the instance
 - IAM instance role with S3 and optional SSM permissions
+- **Elastic IP allocated and associated to your instance** (static IP: `13.223.23.242`)
 
 ## Quick Start
 
@@ -105,9 +106,9 @@ S3_BUCKET="my-bedrock-control-worlds" bash bootstrap-docker.sh
 SSH into the instance and copy your Minecraft server files:
 
 ```bash
-# From your local machine (replace INSTANCE_IP)
-scp -r infra/docker/* ubuntu@INSTANCE_IP:/opt/minecraft/
-scp -r /path/to/your/server/files/* ubuntu@INSTANCE_IP:/opt/minecraft/
+# From your local machine (using Elastic IP: 13.223.23.242)
+scp -r infra/docker/* ubuntu@13.223.23.242:/opt/minecraft/
+scp -r /path/to/your/server/files/* ubuntu@13.223.23.242:/opt/minecraft/
 ```
 
 Or if already on the instance:
@@ -124,8 +125,8 @@ chmod +x /opt/minecraft/backup_and_upload.sh
 ### 5. Build and Run the Container
 
 ```bash
-# SSH to instance
-ssh ubuntu@INSTANCE_IP
+# SSH to instance using Elastic IP
+ssh ubuntu@13.223.23.242
 
 # Build the image
 cd /opt/minecraft
@@ -144,6 +145,8 @@ docker run -d --name mc-server \
 # Verify it's running
 docker ps
 docker logs -f mc-server
+
+# Players can now join at: 13.223.23.242:25565
 ```
 
 ### 6. (Optional) Use Docker Compose
