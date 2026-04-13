@@ -43,12 +43,16 @@ else
   echo "[*] No existing world found in S3; new world will be created."
 fi
 
-# Build the Docker image locally
+# Build the Docker image locally (from /opt/minecraft where server files are)
 echo "[*] Building Docker image: $MC_IMAGE..."
-if [ -f "$REPO_DIR/infra/docker/Dockerfile" ]; then
-  docker build -t $MC_IMAGE $REPO_DIR/infra/docker
+echo "[*] Copying Dockerfile to $DATA_DIR..."
+cp $REPO_DIR/infra/docker/Dockerfile $DATA_DIR/Dockerfile
+
+if [ -f "$DATA_DIR/Dockerfile" ]; then
+  echo "[*] Building from $DATA_DIR (where server files are located)..."
+  docker build -t $MC_IMAGE $DATA_DIR
 else
-  echo "[!] Error: Dockerfile not found at $REPO_DIR/infra/docker/Dockerfile"
+  echo "[!] Error: Dockerfile not found"
   exit 1
 fi
 

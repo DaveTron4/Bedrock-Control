@@ -39,8 +39,10 @@ echo ""
 read -p "[4] 🐳 Rebuild Docker image? (y/n) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-  echo "Building Docker image..."
-  docker build -t local-forge:latest $REPO_DIR/infra/docker
+  echo "Copying Dockerfile to $DATA_DIR..."
+  cp $REPO_DIR/infra/docker/Dockerfile $DATA_DIR/Dockerfile
+  echo "Building Docker image from $DATA_DIR..."
+  docker build -t local-forge:latest $DATA_DIR
   echo "✅ Docker image rebuilt"
 else
   echo "⊘ Skipping Docker rebuild"
