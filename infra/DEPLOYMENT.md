@@ -267,4 +267,101 @@ aws s3 ls s3://my-bedrock-control-worlds/
 
 ---
 
+## 🔄 Repository & Deployment Workflow
+
+Once your repository is cloned on EC2, updates are automatic via symlinks and the `deploy.sh` script.
+
+### Initial Setup (One-Time)
+
+```bash
+# Clone repo on EC2 (bootstrap does this)
+git clone https://github.com/your-username/Bedrock-Control.git ~/Bedrock-Control
+
+# Symlinks are created automatically
+ls -la /opt/minecraft/backup_and_upload.sh
+# → /home/ubuntu/Bedrock-Control/infra/scripts/backup_and_upload.sh
+```
+
+### Deployment Workflow (Repeatable)
+
+**Step 1: Make changes locally**
+```bash
+# Edit files on your local machine
+vim bot/src/commands/stop.ts
+```
+
+**Step 2: Commit and push**
+```bash
+git add bot/src/commands/stop.ts
+git commit -m "Improve stop command response"
+git push origin main
+```
+
+**Step 3: Deploy to EC2 with one command**
+```bash
+ssh ubuntu@13.223.23.242
+bash ~/Bedrock-Control/infra/deploy.sh
+```
+
+The deploy script will:
+- ✅ Pull latest code from `main` branch
+- ✅ Update symlinks to scripts
+- ✅ Refresh systemd service files
+- ✅ Install npm dependencies
+- ⚠️ Ask if you want to rebuild Docker image
+- ⚠️ Ask if you want to restart services
+
+### Benefits
+
+| Traditional | With Git Symlinks |
+|-------------|-------------------|
+| Copy-paste files manually | `bash deploy.sh` |
+| Easy to make mistakes | No manual file copying |
+| Hard to track changes | Full git history |
+| Risky rollbacks | `git revert` to undo |
+| Inconsistent versions | Single source of truth |
+
+### Example: Update Bot Response Times
+
+```bash
+# Local: Improve bot polling interval
+vim bot/src/commands/start.ts
+# Change POLL_INTERVAL from 5000 to 3000 ms
+
+# Local: Commit and push
+git add bot/src/commands/start.ts
+git commit -m "Faster bot status updates"
+git push origin main
+
+# EC2: One command to deploy
+ssh ubuntu@13.223.23.242 "bash ~/Bedrock-Control/infra/deploy.sh"
+
+# Done! Bot now polls twice as fast
+```
+
+### Troubleshooting Deployments
+
+**Symlinks not working after git pull:**
+```bash
+# Recreate symlinks manually
+ln -sf ~/Bedrock-Control/infra/scripts/*.sh /opt/minecraft/
+```
+
+**Changes not taking effect:**
+```bash
+# Restart services
+sudo systemctl restart minecraft-docker
+# Or for bot (if systemd service exists):
+# sudo systemctl restart bot
+```
+
+**Check what changed:**
+```bash
+cd ~/Bedrock-Control
+git log -5 --oneline   # Last 5 commits
+git diff HEAD~1        # Changes since last deployment
+```
+
+---
+
 **Questions or issues?** Check the main README and architecture docs in the project root.

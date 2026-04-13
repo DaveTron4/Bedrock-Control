@@ -2,7 +2,9 @@
 set -euo pipefail
 
 # Configuration
-S3_BUCKET="bedrock-control-s3-bucket"  # Replace with your actual S3 bucket name
+REPO_DIR="$HOME/Bedrock-Control"
+GIT_REPO="https://github.com/DaveTron4/Bedrock-Control.git"
+S3_BUCKET="bedrock-control-s3-bucket"
 WORLD_KEY="world.tar.gz"
 DATA_DIR="/opt/minecraft"
 MC_IMAGE="local-forge:latest"
@@ -11,10 +13,19 @@ INSTANCE_USER="ubuntu"
 echo "[*] Starting Minecraft Docker Bootstrap"
 
 # Update and install dependencies
-echo "[*] Installing Docker and AWS CLI..."
+echo "[*] Installing Docker, AWS CLI, and Git..."
 apt-get update
-apt-get install -y awscli docker.io jq
+apt-get install -y awscli docker.io jq git
 systemctl enable --now docker
+
+# Clone repo if it doesn't exist
+if [ ! -d "$REPO_DIR" ]; then
+  echo "[*] Cloning repository..."
+  git clone $GIT_REPO $REPO_DIR
+  chown -R $INSTANCE_USER:$INSTANCE_USER $REPO_DIR
+else
+  echo "[*] Repository already exists at $REPO_DIR"
+fi
 
 # Create data directory
 echo "[*] Creating $DATA_DIR..."
@@ -32,12 +43,13 @@ else
   echo "[*] No existing world found in S3; new world will be created."
 fi
 
-# Build the Docker image locally (assumes Dockerfile and server files are in $DATA_DIR)
+# Build the Docker image locally
 echo "[*] Building Docker image: $MC_IMAGE..."
-if [ -f "$DATA_DIR/Dockerfile" ]; then
-  docker build -t $MC_IMAGE $DATA_DIR
+if [ -f "$REPO_DIR/infra/docker/Dockerfile" ]; then
+  docker build -t $MC_IMAGE $REPO_DIR/infra/docker
 else
-  echo "[!] Warning: Dockerfile not found at $DATA_DIR/Dockerfile"
+  echo "[!] Error: Dockerfile not found at $REPO_DIR/infra/docker/Dockerfile"
+  exit 1
 fi
 
 # Start the container
@@ -51,67 +63,37 @@ docker run -d --name mc-server \
   -e JVM_XMS="1G" \
   $MC_IMAGE
 
-# Create systemd service to manage the container and handle graceful shutdown
-echo "[*] Creating systemd service: minecraft-docker.service..."
-cat >/etc/systemd/system/minecraft-docker.service <<'SERVICE'
-[Unit]
-Description=Minecraft Forge Docker Server
-After=docker.service
-Requires=docker.service
+# Create systemd service (symlinked from repo)
+echo "[*] Setting up systemd service..."
+sudo cp $REPO_DIR/infra/minecraft-docker.service /etc/systemd/system/
+sudo systemctl daemon-reload
 
-[Service]
-Type=simple
-Restart=always
-ExecStart=/usr/bin/docker start -a mc-server
-ExecStop=/usr/bin/docker stop -t 120 mc-server
-ExecStopPost=/opt/minecraft/backup_and_upload.sh
-TimeoutStopSec=150
+# Create symlinks for scripts (so updates from git are automatic)
+echo "[*] Creating symlinks to repo scripts..."
+ln -sf $REPO_DIR/infra/scripts/backup_and_upload.sh $DATA_DIR/backup_and_upload.sh
+ln -sf $REPO_DIR/infra/scripts/restore_from_s3.sh $DATA_DIR/restore_from_s3.sh
+chmod +x $REPO_DIR/infra/scripts/*.sh
 
-[Install]
-WantedBy=multi-user.target
-SERVICE
-
-# Create backup and upload script
-echo "[*] Creating backup and upload script..."
-cat >/opt/minecraft/backup_and_upload.sh <<'BACKUP'
-#!/bin/bash
-set -e
-
-DATA_DIR=/opt/minecraft
-S3_BUCKET=my-bedrock-control-worlds
-TIMESTAMP=$(date +%s)
-BACKUP_FILE=/tmp/world-${TIMESTAMP}.tar.gz
-
-echo "[*] Creating world backup..."
-tar -C $DATA_DIR -czf $BACKUP_FILE world/ logs/ server.properties ops.json whitelist.json || {
-  echo "[!] Backup failed"
-  exit 1
-}
-
-echo "[*] Uploading to S3..."
-aws s3 cp $BACKUP_FILE s3://$S3_BUCKET/world.tar.gz || {
-  echo "[!] S3 upload failed"
-  exit 1
-}
-
-# Keep last 5 backups as timestamped archives (optional)
-aws s3 cp $BACKUP_FILE s3://$S3_BUCKET/backups/world-${TIMESTAMP}.tar.gz || true
-
-rm -f $BACKUP_FILE
-echo "[*] Backup uploaded successfully"
-BACKUP
-
-chmod +x /opt/minecraft/backup_and_upload.sh
-
-# Reload systemd and enable the service
-echo "[*] Enabling and starting minecraft-docker.service..."
-systemctl daemon-reload
-systemctl enable minecraft-docker.service
-systemctl start minecraft-docker.service || {
+# Enable and start the service
+echo "[*] Enabling minecraft-docker service..."
+sudo systemctl enable minecraft-docker.service
+sudo systemctl start minecraft-docker.service || {
   echo "[!] Service start failed; check logs with: systemctl status minecraft-docker.service"
   exit 1
 }
 
-echo "[*] Bootstrap complete! Server should be running."
-echo "[*] Check status: systemctl status minecraft-docker.service"
-echo "[*] View logs: docker logs mc-server"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✅ Bootstrap complete!"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "📍 Repository at: $REPO_DIR"
+echo "📍 Minecraft data at: $DATA_DIR"
+echo ""
+echo "📝 Next steps:"
+echo "   - Check status: systemctl status minecraft-docker.service"
+echo "   - View logs: docker logs -f mc-server"
+echo "   - To update: cd $REPO_DIR && bash infra/deploy.sh"
+echo ""
+echo "🎮 Players can join at: 13.223.23.242:25565"
+echo ""
