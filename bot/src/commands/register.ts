@@ -4,6 +4,7 @@ import { Logger } from '../utils/logger';
 import startCommand from './start';
 import stopCommand from './stop';
 import statusCommand from './status';
+import rconCommand from './rcon';
 import type { SlashCommand } from '../types';
 
 /**
@@ -14,6 +15,7 @@ export const commands: Record<string, SlashCommand> = {
   start: startCommand,
   stop: stopCommand,
   status: statusCommand,
+  rcon: rconCommand,
 };
 
 /**

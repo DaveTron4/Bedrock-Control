@@ -16,6 +16,14 @@ export const CONFIG = {
     guildId: process.env.DISCORD_GUILD_ID, // Optional: for dev server
   },
 
+  // RCON Configuration (Minecraft remote console)
+  rcon: {
+    host: process.env.RCON_HOST || process.env.EC2_HOST || 'localhost',
+    port: parseInt(process.env.RCON_PORT || '25575', 10),
+    password: process.env.RCON_PASSWORD || '',
+    timeout: parseInt(process.env.RCON_TIMEOUT_MS || '5000', 10),
+  },
+
   // Bot Configuration
   bot: {
     prefix: '/',

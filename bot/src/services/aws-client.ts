@@ -61,3 +61,20 @@ export async function getStatus(): Promise<string | undefined> {
     throw error;
   }
 }
+
+/**
+ * Get EC2 instance public IP address.
+ */
+export async function getPublicIp(): Promise<string | undefined> {
+  try {
+    const instanceId = getInstanceId();
+    const command = new DescribeInstancesCommand({ InstanceIds: [instanceId] });
+    const response = await ec2Client.send(command);
+    const ip = response.Reservations?.[0]?.Instances?.[0]?.PublicIpAddress;
+    Logger.info(`Instance public IP: ${ip ?? 'none'}`);
+    return ip;
+  } catch (error) {
+    Logger.error('Failed to get instance public IP', error);
+    throw error;
+  }
+}

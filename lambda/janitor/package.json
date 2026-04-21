@@ -1,0 +1,20 @@
+{
+  "name": "bedrock-janitor",
+  "version": "1.0.0",
+  "description": "Auto-stops EC2 Minecraft server after idle threshold",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node22 --external:@aws-sdk/client-ec2 --outfile=dist/index.js",
+    "package": "npm run build && cd dist && zip -r ../janitor.zip index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-ec2": "^3.1023.0",
+    "rcon-client": "^4.2.5"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.0.0"
+  }
+}
