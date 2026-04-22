@@ -2,7 +2,8 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { Client, GatewayIntentBits, Events, Interaction } from 'discord.js';
+import express, { Express, Request, Response } from 'express';
+import { Client, GatewayIntentBits, Events, Interaction, TextChannel } from 'discord.js';
 import { registerCommands, getCommandHandler } from './commands/register';
 import { validateConfig, CONFIG } from './utils/config';
 import { Logger } from './utils/logger';
@@ -12,6 +13,58 @@ validateConfig();
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.DirectMessages],
+});
+
+// HTTP Server for Lambda notifications
+const app: Express = express();
+const HTTP_PORT = parseInt(process.env.BOT_HTTP_PORT || '3000', 10);
+
+app.use(express.json());
+
+/**
+ * POST /notify - Lambda sends server notifications
+ */
+app.post('/notify', async (req: Request, res: Response) => {
+  try {
+    const { title, description, idleMinutes } = req.body;
+
+    if (!title || !description) {
+      return res.status(400).json({ error: 'Missing required fields: title, description' });
+    }
+
+    const channelId = CONFIG.discord.channelId;
+    if (!channelId) {
+      Logger.warn('Notification endpoint: DISCORD_CHANNEL_ID not configured');
+      return res.status(500).json({ error: 'Channel ID not configured' });
+    }
+
+    const channel = await client.channels.fetch(channelId).catch(() => null);
+    if (!channel || !channel.isTextBased()) {
+      Logger.warn(`Notification endpoint: Channel ${channelId} not found or not text-based`);
+      return res.status(500).json({ error: 'Channel not accessible' });
+    }
+
+    await (channel as TextChannel).send({
+      embeds: [{
+        title,
+        description,
+        color: 0xff4444,
+        footer: { text: 'Restart with /start' },
+        timestamp: new Date().toISOString(),
+      }],
+    });
+
+    Logger.success(`Notification sent: ${title}`);
+    return res.json({ success: true, message: 'Notification sent' });
+  } catch (error) {
+    Logger.error('Notification endpoint error:', error);
+    return res.status(500).json({ error: 'Failed to send notification' });
+  }
+});
+
+// Health check endpoint
+app.get('/health', (req: Request, res: Response) => {
+  res.json({ status: 'ok', bot: client.isReady() ? 'ready' : 'not ready' });
 });
 
 /**
@@ -52,6 +105,13 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
       ephemeral: true,
     });
   }
+});
+
+/**
+ * Start HTTP server before logging in
+ */
+app.listen(HTTP_PORT, () => {
+  Logger.success(`🌐 HTTP server listening on port ${HTTP_PORT}`);
 });
 
 /**

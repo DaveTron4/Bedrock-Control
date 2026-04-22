@@ -66,6 +66,7 @@ fi
 
 docker run -d --name mc-server \
   -p 25565:25565 \
+  -p 25575:25575 \
   -v $DATA_DIR/world:/data/world \
   -v $DATA_DIR/logs:/data/logs \
   --restart unless-stopped \

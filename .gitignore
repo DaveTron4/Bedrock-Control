@@ -3,3 +3,7 @@ node_modules/
 .env
 bedrock_control.pem
 .DS_Store
+
+dist/
+
+*.zip

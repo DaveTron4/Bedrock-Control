@@ -11,7 +11,7 @@ const IDLE_THRESHOLD_MS = parseInt(process.env.IDLE_THRESHOLD_MINUTES || '20', 1
 const IDLE_TAG_KEY = 'mc:idle-since';
 
 const INSTANCE_ID = process.env.EC2_INSTANCE_ID!;
-const REGION = process.env.AWS_REGION || 'us-east-1';
+const REGION = process.env.REGION || 'us-east-1';
 const RCON_HOST = process.env.RCON_HOST; // optional — falls back to public IP
 const RCON_PORT = parseInt(process.env.RCON_PORT || '25575', 10);
 const RCON_PASSWORD = process.env.RCON_PASSWORD!;

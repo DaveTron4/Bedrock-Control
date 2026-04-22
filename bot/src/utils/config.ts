@@ -14,6 +14,7 @@ export const CONFIG = {
     token: process.env.DISCORD_TOKEN,
     clientId: process.env.DISCORD_CLIENT_ID,
     guildId: process.env.DISCORD_GUILD_ID, // Optional: for dev server
+    channelId: process.env.DISCORD_CHANNEL_ID, // Required: for bot notifications
   },
 
   // RCON Configuration (Minecraft remote console)
