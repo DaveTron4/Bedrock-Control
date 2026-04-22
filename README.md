@@ -125,6 +125,62 @@ Expected: `✅ Bedrock Control online! ✅ Successfully registered commands 3`
 
 ---
 
+## 🔧 RCON Commands (Admin Only)
+
+Use `/rcon command: <command>` in Discord to execute server commands. **Admin-only feature** (blocks dangerous commands).
+
+### 👥 Player Management
+
+| Command | Purpose |
+|---------|---------|
+| `/rcon command: list` | Show online players & count |
+| `/rcon command: whitelist add PlayerName` | Add to whitelist |
+| `/rcon command: whitelist remove PlayerName` | Remove from whitelist |
+| `/rcon command: whitelist list` | Show whitelisted players |
+| `/rcon command: ban PlayerName` | Ban a player |
+| `/rcon command: pardon PlayerName` | Unban a player |
+| `/rcon command: op PlayerName` | Give operator (admin) |
+| `/rcon command: deop PlayerName` | Remove operator |
+
+### 🌍 World Management
+
+| Command | Purpose |
+|---------|---------|
+| `/rcon command: save-all` | Manually save world |
+| `/rcon command: save-all flush` | Force save immediately |
+| `/rcon command: setblock ~ ~1 ~ bedrock` | Place block at coords |
+| `/rcon command: difficulty peaceful` | Change difficulty |
+| `/rcon command: seed` | Get world seed |
+| `/rcon command: time set 0` | Set time to sunrise |
+| `/rcon command: weather rain` | Change weather |
+
+### 📢 Communication
+
+| Command | Purpose |
+|---------|---------|
+| `/rcon command: say Server maintenance in 5 min` | Broadcast message to all |
+| `/rcon command: tell PlayerName Hello!` | Send private message |
+| `/rcon command: me is rebooting...` | Action message |
+
+### 🔍 Monitoring
+
+| Command | Purpose |
+|---------|---------|
+| `/rcon command: list` | Player count & names |
+| `/rcon command: perf` | Performance metrics |
+| `/rcon command: gamerule` | View game rules |
+| `/rcon command: gamerule keepInventory true` | Keep items on death |
+
+### ⚠️ Blocked Commands
+
+These commands are **forbidden** via RCON (use `/start` and `/stop` instead):
+- `stop` — Use `/stop` Discord command
+- `restart` — Restart via `/stop` + `/start`
+- `op` — Security risk via remote
+- `deop` — Security risk via remote
+
+---
+
 ## 🏗️ Architecture
 
 ```
