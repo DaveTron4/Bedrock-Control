@@ -8,6 +8,14 @@ set -euo pipefail
 REPO_DIR="$HOME/Bedrock-Control"
 DATA_DIR="/opt/minecraft"
 
+# Check if running with sudo for commands that need it
+if [ "$EUID" -ne 0 ]; then 
+  echo "⚠️  Some commands need sudo. Running with sudo for privileged operations..."
+  SUDO="sudo"
+else
+  SUDO=""
+fi
+
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "🚀 Bedrock Control Infrastructure Deployment"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -30,8 +38,8 @@ echo "✅ Symlinks updated"
 # Step 3: Update systemd service
 echo ""
 echo "[3] ⚙️ Updating systemd service..."
-sudo cp $REPO_DIR/infra/minecraft-docker.service /etc/systemd/system/
-sudo systemctl daemon-reload
+$SUDO cp $REPO_DIR/infra/minecraft-docker.service /etc/systemd/system/
+$SUDO systemctl daemon-reload
 echo "✅ Systemd service updated"
 
 # Step 4: (Optional) Rebuild Docker image if Dockerfile changed
@@ -54,10 +62,10 @@ read -p "[5] 🔄 Restart Minecraft server? (y/n) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
   echo "Restarting minecraft-docker service..."
-  sudo systemctl restart minecraft-docker
+  $SUDO systemctl restart minecraft-docker
   echo "✅ Service restarted"
   sleep 2
-  systemctl status minecraft-docker
+  $SUDO systemctl status minecraft-docker
 else
   echo "⊘ Skipping service restart"
 fi
