@@ -256,21 +256,6 @@ aws ec2 describe-instances --instance-ids i-xxxxx | grep Arn
 
 ---
 
-## 📝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/something-cool`)
-3. Commit changes with clear messages
-4. Push and create a Pull Request
-
----
-
-## 📄 License
-
-MIT License — See LICENSE file for details
-
----
-
 ## 🎯 Roadmap
 
 - [ ] Terraform IaC (one-click deploy)
@@ -289,28 +274,6 @@ MIT License — See LICENSE file for details
 [Issues](https://github.com/DaveTron4/Bedrock-Control/issues) • [Discussions](https://github.com/DaveTron4/Bedrock-Control/discussions) • [Discord Support](https://discord.gg/your-server)
 
 </div>
-│   │   │   └── aws-client.ts   ← AWS EC2 operations
-│   │   ├── types/
-│   │   │   └── index.ts        ← TypeScript interfaces
-│   │   ├── utils/
-│   │   │   ├── config.ts       ← Config & env vars
-│   │   │   └── logger.ts       ← Logging utilities
-│   │   └── index.ts            ← Main bot entry
-│   ├── .env                    ← Environment variables
-│   └── package.json
-├── infra/
-│   ├── docker/
-│   │   ├── Dockerfile         ← Minecraft server image
-│   │   └── docker-compose.yml
-│   ├── scripts/
-│   │   ├── bootstrap-docker.sh      ← One-time EC2 setup
-│   │   ├── backup_and_upload.sh     ← World backup to S3
-│   │   └── restore_from_s3.sh       ← World restore from S3
-│   ├── minecraft-docker.service    ← Systemd unit
-│   ├── iam-policy.json             ← EC2 IAM permissions
-│   └── DEPLOYMENT.md               ← Full deployment guide
-└── README.md
-```
 
 ---
 
