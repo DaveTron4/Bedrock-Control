@@ -115,29 +115,22 @@ export async function handler(): Promise<void> {
 
   console.log(`Idle threshold reached — stopping instance ${INSTANCE_ID}`);
 
-  const botToken = process.env.DISCORD_BOT_TOKEN;
-  const channelId = process.env.DISCORD_CHANNEL_ID;
-  if (botToken && channelId) {
+  // Notify via bot HTTP endpoint
+  const botNotifyUrl = process.env.BOT_NOTIFY_URL;
+  if (botNotifyUrl) {
     try {
-      await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+      await fetch(botNotifyUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bot ${botToken}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          embeds: [{
-            title: '🛑 Server Auto-Stopped',
-            description: `No players for **${idleMinutes} minutes** — server shut down to save costs.`,
-            color: 0xff4444,
-            footer: { text: 'Start it again with /start' },
-            timestamp: new Date().toISOString(),
-          }],
+          title: '🛑 Server Auto-Stopped',
+          description: `No players for **${idleMinutes} minutes** — auto-stopped to save costs.`,
+          idleMinutes,
         }),
       });
-      console.log('Discord notification sent');
+      console.log('Bot notification sent');
     } catch (err) {
-      console.warn('Discord notification failed:', (err as Error).message);
+      console.warn('Bot notification failed:', (err as Error).message);
     }
   }
 
