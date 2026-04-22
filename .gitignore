@@ -3,5 +3,3 @@ node_modules/
 .env
 bedrock_control.pem
 .DS_Store
-lambda/janitor/dist/
-lambda/janitor/janitor.zip

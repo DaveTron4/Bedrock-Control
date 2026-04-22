@@ -7,7 +7,7 @@ import {
 } from '@aws-sdk/client-ec2';
 import { Rcon } from 'rcon-client';
 
-const IDLE_THRESHOLD_MS = 20 * 60 * 1000; // 20 minutes
+const IDLE_THRESHOLD_MS = parseInt(process.env.IDLE_THRESHOLD_MINUTES || '20', 10) * 60 * 1000;
 const IDLE_TAG_KEY = 'mc:idle-since';
 
 const INSTANCE_ID = process.env.EC2_INSTANCE_ID!;
@@ -115,12 +115,16 @@ export async function handler(): Promise<void> {
 
   console.log(`Idle threshold reached — stopping instance ${INSTANCE_ID}`);
 
-  const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
-  if (webhookUrl) {
+  const botToken = process.env.DISCORD_BOT_TOKEN;
+  const channelId = process.env.DISCORD_CHANNEL_ID;
+  if (botToken && channelId) {
     try {
-      await fetch(webhookUrl, {
+      await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bot ${botToken}`,
+        },
         body: JSON.stringify({
           embeds: [{
             title: '🛑 Server Auto-Stopped',
