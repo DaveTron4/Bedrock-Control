@@ -56,8 +56,14 @@ else
   exit 1
 fi
 
-# Start the container
+# Start the container (remove old one if it exists)
 echo "[*] Starting Minecraft Docker container..."
+if docker ps -a --format '{{.Names}}' | grep -q '^mc-server$'; then
+  echo "[*] Found existing mc-server container, stopping and removing..."
+  docker stop mc-server 2>/dev/null || true
+  docker rm mc-server 2>/dev/null || true
+fi
+
 docker run -d --name mc-server \
   -p 25565:25565 \
   -v $DATA_DIR/world:/data/world \

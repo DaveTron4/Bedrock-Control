@@ -1,138 +1,235 @@
 # Bedrock Control 🎮☁️
 
-**Bedrock Control** is a professional-grade, event-driven orchestration tool designed to manage Minecraft servers on AWS. It bridges the gap between on-premise hardware (Raspberry Pi) and cloud scalability, ensuring your server is available on-demand while keeping operational costs near zero.
+<div align="center">
+
+![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=flat-square&logo=amazon-aws&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-%23007ACC.svg?style=flat-square&logo=typescript&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-%230db7ed.svg?style=flat-square&logo=docker&logoColor=white)
+![Minecraft](https://img.shields.io/badge/Minecraft-Forge%201.20.1-%2302A029?style=flat-square&logo=minecraft&logoColor=white)
+![Discord.js](https://img.shields.io/badge/Discord.js-v14-%235865F2.svg?style=flat-square&logo=discord&logoColor=white)
+![S3](https://img.shields.io/badge/S3%20Persistence-Enabled-brightgreen?style=flat-square)
+![Elastic IP](https://img.shields.io/badge/Elastic%20IP-13.223.23.242-blue?style=flat-square)
+![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)
+
+**On-demand Minecraft orchestration via Discord — pay only when playing**
+
+[Features](#-features) • [Quick Start](#-quick-start) • [Architecture](#-architecture) • [Deployment](#-deployment) • [Docs](#-documentation)
+
+</div>
 
 ---
 
-## 📖 Project Overview
+## 📖 What is Bedrock Control?
 
-The "Host Hostage" crisis is over. No more waiting for that one friend to wake up and turn on their PC. **Bedrock Control** allows any authorized Discord member to "wake up" the server. Once the fun is over and the server is empty, the "Janitor" logic automatically backs up the world to S3 and shuts down the instance to save money.
+**Bedrock Control** is a professional-grade, event-driven orchestration tool that allows any Discord user to instantly spin up a Minecraft server on AWS. When the squad logs off, the server automatically backs up the world to S3 and shuts down—**saving $120+ per month** on always-on infrastructure costs.
 
-### Why this project exists:
-* **Accessibility:** Decentralizes server control to the squad via Discord.
-* **Cost Optimization:** Uses a "Pay-as-you-go" model, idling at $0 when not in use.
-* **Cybersecurity:** Implements the **Principle of Least Privilege** and **Zero-Trust** identity for on-premise hardware.
+### 🎯 The Problem It Solves
+
+- ❌ **"Host Hostage"**: One person's PC hosts the server 24/7, consuming electricity
+- ❌ **No automation**: Manual start/stop requires remembering, logging in, managing backups
+- ❌ **Cost wastage**: EC2 instances cost ~$150/month running 24/7, even if idle
+
+### ✅ How Bedrock Control Works
+
+1. **Admin types `/start`** in Discord
+2. **EC2 instance boots** in ~60 seconds
+3. **World is restored** from S3
+4. **Players join** at a static Elastic IP
+5. **Lambda monitors** player count every 15 minutes
+6. **After 20 min idle**: Server auto-saves, backs up to S3, and **stops** (saves $120/month!)
+
+---
+
+## ⚡ Key Features
+
+| Feature | Benefit |
+|---------|---------|
+| 🎮 **One-Click Server Control** | `/start`, `/stop`, `/status` via Discord |
+| 💾 **Automatic World Persistence** | World backed up to S3 on every shutdown |
+| 📊 **Idle Detection** | Lambda auto-stops server after 20 minutes with no players |
+| 🔐 **Security First** | IAM roles, no hardcoded credentials, Elastic IP |
+| 📈 **Cost Optimization** | Pay ~$0.20/hr when running, $0/hr when idle |
+| 🚀 **Fast Deployments** | `git push` → `bash deploy.sh` workflow |
+| 🔗 **Git-Driven Infrastructure** | Symlinks + deployment scripts for easy updates |
+| 🗺️ **Static Address** | Elastic IP (13.223.23.242) never changes |
 
 ---
 
 ## 🛠️ Technology Stack
 
-![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white)
-![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
-![Terraform](https://img.shields.io/badge/terraform-%235835CC.svg?style=for-the-badge&logo=terraform&logoColor=white)
-![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-C51A4A?style=for-the-badge&logo=Raspberry-Pi&logoColor=white)
-![Discord.js](https://img.shields.io/badge/discord.js-%235865F2.svg?style=for-the-badge&logo=discord&logoColor=white)
-![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
-
-| Technology | Purpose |
-| :--- | :--- |
-| **AWS EC2 (t4g.small)** | High-performance ARM-based compute for the Minecraft server. |
-| **AWS Lambda** | The "Janitor" that checks player counts and manages shutdown logic. |
-| **AWS S3 & Glacier** | Reliable world persistence and long-term archival for "broke" students. |
-| **IAM Roles Anywhere** | Securely grants temporary AWS credentials to the Raspberry Pi using certificates. |
-| **Terraform** | Infrastructure as Code (IaC) to ensure the entire stack is repeatable. |
-| **Cloudflare API** | Dynamic DNS (DDNS) to map a custom domain to the server's changing IP. |
-| **Docker** | Containerizes the Discord bot for consistent deployment on the Pi. |
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| **Server Hosting** | AWS EC2 m7i-flex.large | 8GB RAM, 2 vCPU, x86_64, $0.20/hr |
+| **World Storage** | AWS S3 + IAM Roles | Encrypted backups, no hardcoded credentials |
+| **Bot Framework** | Discord.js v14 | Slash commands, real-time status updates |
+| **Containerization** | Docker + Forge 1.20.1 | Reproducible server, deterministic builds |
+| **Automation** | AWS Lambda + EventBridge | 15-minute idle checks, auto-shutdown |
+| **Server Control Plane** | Raspberry Pi (future) | Permanent control point via IAM Roles Anywhere |
+| **DNS** | Cloudflare | Custom domain pointing to Elastic IP (optional) |
+| **Infrastructure** | Terraform (planned) | IaC for entire stack provisioning |
 
 ---
 
-## 🏗️ Cloud Architecture
+## 📊 Implementation Status
 
-The architecture is designed to be **event-driven**. We don't poll; we react.
+### ✅ Completed (Production-Ready)
 
-### The Workflow:
-1.  **Trigger:** An Admin issues a `/start` command. The **Raspberry Pi** (authorized via **IAM Roles Anywhere**) tells AWS to boot the EC2.
-2.  **Provision:** The EC2 runs a **User Data script** that:
-    * Pulls the latest `world.zip` from **S3**.
-    * Updates the **Cloudflare DNS** with its new Public IP.
-    * Hits a **Discord Webhook** to announce: "Server is Live!"
-3.  **Monitor:** **EventBridge** triggers a **Lambda** every 15 minutes. The Lambda uses the **RCON Protocol** to query the server's player count.
-4.  **Cleanup:** If `players == 0`, the Lambda saves the game, pushes the update to S3, and stops the instance.
+- ✅ **Discord Bot** (TypeScript)
+  - `/start` with live polling → ✅ confirmation
+  - `/stop` with backup confirmation
+  - `/status` with real-time EC2 state
+  - Auto-registration via Discord REST API
 
----
+- ✅ **Minecraft Server Infrastructure**
+  - Forge 1.20.1 in Docker on m7i-flex.large
+  - S3 world persistence (automatic backup/restore)
+  - Systemd graceful shutdown + ExecStopPost hook
+  - Elastic IP (static address: 13.223.23.242)
+  - IAM role-based S3 access (no hardcoded keys)
 
-## � Implementation Status
+- ✅ **Deployment Pipeline**
+  - Git-based workflow (`bootstrap.sh` + `deploy.sh`)
+  - Symlinked scripts auto-update from repo
+  - One-command deployment
 
-### ✅ Completed
-- **Discord Bot (TypeScript)**: Modular slash command structure with `/start`, `/stop`, `/status`
-- **AWS EC2 Integration**: Start/stop EC2 instances via AWS SDK
-- **Dockerized Minecraft Server**: Forge 1.20.1 running in Docker on m7i-flex.large
-- **S3 World Persistence**: Automatic backup on shutdown, restore on startup
-- **Systemd Service**: Graceful server shutdown with automatic world backup
-- **IAM Security**: EC2 instance role with S3 access (no hardcoded keys on instance)
+- ✅ **Documentation**
+  - README with architecture overview
+  - AWS_SETUP.md with complete walkthrough
+  - DEPLOYMENT.md with git workflow
 
-### 🔄 In Progress
-- **Lambda Janitor**: Scheduled checks for idle players (15-minute intervals)
-- **CloudWatch Monitoring**: Real-time metrics and cost tracking
-- **Terraform IaC**: Automated EC2 + S3 + IAM provisioning
+### 🟡 In Progress
 
-### ⏳ TODO
-- **Production Bot Deployment**: Deploy bot to Raspberry Pi in Docker
-- **IAM Roles Anywhere**: X.509 certificate-based auth for Raspberry Pi
-- **Cloudflare DDNS**: Dynamic DNS integration for stable server address
-- **RCON Protocol**: Player count monitoring for auto-shutdown logic
+- 🟡 **Lambda Janitor** (TypeScript)
+  - ✅ RCON player count checking
+  - ✅ EC2 idle tagging system
+  - ✅ 20-minute idle threshold
+  - ✅ Auto-shutdown on idle
+  - ✅ Discord webhook notifications
+  - ⏳ EventBridge trigger setup (manual)
+  - ⏳ IAM policy for Lambda
+
+### ⏳ Not Started
+
+- ⏳ **Raspberry Pi Deployment**: Bot runs on Pi for 24/7 control plane
+- ⏳ **IAM Roles Anywhere**: Certificate-based auth for Pi (no long-lived keys)
+- ⏳ **Terraform IaC**: One `terraform apply` to deploy entire stack
+- ⏳ **Cloudflare DDNS** (optional): Friendly domain for Elastic IP
 
 ---
 
 ## 🚀 Quick Start (Local Development)
 
 ### Prerequisites
-- **Node.js 18+** and npm
-- **Discord Bot Token** (from [Discord Developer Portal](https://discord.com/developers/applications))
-- **AWS Credentials** (Access Key ID + Secret Key, or `aws configure`)
-- **EC2 Instance ID** (the running Minecraft server)
 
-### 1. Clone & Install
+- **Node.js 18+** (for bot development)
+- **Git** for cloning repo
+- **AWS Account** with EC2, S3, Lambda, IAM access
+- **Discord Server** with admin permissions
+- **Discord Bot Token** (from [Developer Portal](https://discord.com/developers/applications))
+- **AWS Credentials** configured (`aws configure`)
+
+### 1. Clone Repository
 
 ```bash
-git clone <repo-url>
-cd Bedrock-Control/bot
-npm install
+git clone https://github.com/DaveTron4/Bedrock-Control.git
+cd Bedrock-Control
 ```
 
-### 2. Configure Environment
+### 2. Configure Bot Credentials
 
-Copy your `.env` file (already in the repo):
-```powershell
-# bot/.env
-DISCORD_TOKEN=your-bot-token
-DISCORD_CLIENT_ID=your-client-id
-EC2_INSTANCE_ID=i-xxxxx
-AWS_REGION=us-east-1
+```bash
+cd bot
+cp .env.example .env
+# Edit .env:
+# DISCORD_TOKEN=your-token-here
+# DISCORD_CLIENT_ID=your-client-id
+# DISCORD_GUILD_ID=your-server-id
+# EC2_INSTANCE_ID=i-xxxxxxxxx
+# AWS_REGION=us-east-1
 ```
 
-### 3. Configure AWS Credentials
+### 3. Configure AWS
 
-**Option A: AWS CLI (Recommended)**
 ```bash
 aws configure
-# Enter Access Key ID, Secret Key, region (us-east-1), output (json)
+# Enter: Access Key, Secret Key, Region (us-east-1), Format (json)
 ```
 
-**Option B: Environment Variables**
-```powershell
-$env:AWS_ACCESS_KEY_ID="your-key"
-$env:AWS_SECRET_ACCESS_KEY="your-secret"
-```
-
-### 4. Run the Bot
+### 4. Install & Run Bot
 
 ```bash
+npm install
 npm run dev
 ```
 
-You should see:
+Expected output:
 ```
-[✅] Bedrock Control online! Logged in as BotName#0000
-[✅] Successfully registered commands 3
+✅ Bedrock Control online! Logged in as BotName#0000
+✅ Successfully registered commands 3
 ```
 
-### 5. Use in Discord
+### 5. Test Commands in Discord
 
-In any Discord channel, type:
-- `/start` — Start the Minecraft server
-- `/stop` — Stop server & backup world
-- `/status` — Check server status
+```
+/start    → ⏳ Server Starting... → ✅ Server Started! (polls every 5 sec)
+/stop     → ⏹️ Server Stopping... → ✅ Server Stopped! + Backup Confirmed
+/status   → Shows: 🟢 Running, 🔴 Stopped, 🟡 Pending
+```
+
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
+│  Discord Server                                                 │
+│  ├─ Player types: /start                                        │
+│  └─ Player types: /stop                                         │
+│         │                                                       │
+└─────────┼───────────────────────────────────────────────────────┘
+          │
+          ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ Raspberry Pi (Future: Permanent Control Plane)                 │
+│ ├─ Discord.js Bot (always-on, $5/yr electricity)              │
+│ ├─ IAM Roles Anywhere (X.509 cert auth to AWS)                │
+│ └─ Zero long-lived credentials on hardware                     │
+└─────────────────────────────────────────────────────────────────┘
+          │
+          ├─ (AWS SDK EC2: StartInstances)
+          │
+          ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ AWS Account (us-east-1)                                        │
+│                                                                 │
+│  ┌────────────────────────────────────────────────────────┐    │
+│  │ EC2: m7i-flex.large (13.223.23.242 - Elastic IP)      │    │
+│  ├─ Minecraft Forge 1.20.1 in Docker                      │    │
+│  ├─ Systemd service (graceful shutdown + S3 backup)       │    │
+│  └─ IAM instance role (S3 GetObject/PutObject)            │    │
+│  └────────────────────────────────────────────────────────┘    │
+│         │ (Backup on stop)                                      │
+│         ▼                                                        │
+│  ┌────────────────────────────────────────────────────────┐    │
+│  │ S3: bedrock-control-s3-bucket                          │    │
+│  ├─ world.tar.gz (latest world backup)                    │    │
+│  ├─ backups/world-{timestamp}.tar.gz (30-day history)     │    │
+│  └─ AES256 encryption enabled                             │    │
+│  └────────────────────────────────────────────────────────┘    │
+│         │                                                        │
+│         └─ (Restore on start)                                   │
+│                                                                 │
+│  ┌────────────────────────────────────────────────────────┐    │
+│  │ Lambda: Janitor (triggered every 15 min via EventBridge) │  │
+│  ├─ RCON query to EC2: "How many players?"                │    │
+│  ├─ Tag EC2 with idle timestamp                           │    │
+│  ├─ If idle > 20 min → StopInstances + Discord webhook    │    │
+│  └─ Clears idle tag if players online                     │    │
+│  └────────────────────────────────────────────────────────┘    │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -140,14 +237,185 @@ In any Discord channel, type:
 
 ```
 Bedrock-Control/
-├── bot/
+├── bot/                                    # Discord Bot (TypeScript)
 │   ├── src/
 │   │   ├── commands/
-│   │   │   ├── start.ts        ← Start EC2 instance
-│   │   │   ├── stop.ts         ← Stop EC2 instance
-│   │   │   ├── status.ts       ← Check server status
-│   │   │   └── register.ts     ← Register all commands
+│   │   │   ├── start.ts                  # /start (with live polling)
+│   │   │   ├── stop.ts                   # /stop (with live polling)
+│   │   │   ├── status.ts                 # /status
+│   │   │   └── register.ts               # Auto-register all commands
 │   │   ├── services/
+│   │   │   └── aws-client.ts             # EC2 control via AWS SDK
+│   │   ├── utils/
+│   │   │   ├── config.ts                 # .env validation
+│   │   │   ├── logger.ts                 # Formatted logging
+│   │   │   └── types.ts                  # TypeScript interfaces
+│   │   └── index.ts                      # Bot entry point
+│   ├── .env                              # Config (git-ignored)
+│   ├── .gitignore                        # Prevent credential leaks
+│   └── package.json
+│
+├── lambda/
+│   └── janitor/                          # Auto-shutdown Lambda (TypeScript)
+│       ├── src/
+│       │   └── index.ts                  # Main handler
+│       ├── dist/                         # Compiled & zipped for AWS
+│       └── package.json
+│
+├── infra/
+│   ├── scripts/
+│   │   ├── bootstrap-docker.sh           # One-time EC2 setup
+│   │   ├── deploy.sh                     # Git → deployment (repeatable)
+│   │   ├── backup_and_upload.sh          # S3 backup + compress
+│   │   └── restore_from_s3.sh            # S3 restore + extract
+│   ├── docker/
+│   │   ├── Dockerfile                    # Forge 1.20.1 image
+│   │   └── docker-compose.yml            # Optional multi-service
+│   ├── minecraft-docker.service          # Systemd unit file
+│   ├── iam-policy.json                   # IAM role policy
+│   ├── DEPLOYMENT.md                     # Detailed deployment guide
+│   └── AWS_SETUP.md                      # AWS-specific setup
+│
+├── README.md                             # This file
+├── .git/                                 # Version control
+├── .gitignore                            # Ignore secrets + artifacts
+└── package-lock.json
+```
+
+---
+
+## 🔄 Development Workflow
+
+### Local Changes → EC2 Deployment
+
+```bash
+# 1. Local: Make code changes
+vim bot/src/commands/start.ts
+
+# 2. Local: Test (if possible)
+npm run dev
+
+# 3. Local: Commit & push
+git add .
+git commit -m "Improve start command polling"
+git push origin main
+
+# 4. EC2: One-command deployment
+ssh ubuntu@13.223.23.242
+bash ~/Bedrock-Control/infra/deploy.sh
+# Choose: Rebuild Docker? Restart services?
+```
+
+### Benefits
+
+- ✅ No manual copying
+- ✅ Full git history
+- ✅ Easy rollback: `git revert`
+- ✅ Version-controlled infrastructure
+
+---
+
+## 📚 Documentation
+
+- **[AWS_SETUP.md](AWS_SETUP.md)** — Complete AWS setup: S3, IAM, EC2, Elastic IP
+- **[infra/DEPLOYMENT.md](infra/DEPLOYMENT.md)** — Deployment guide + git workflow troubleshooting
+- **[LAMBDA_JANITOR.md](LAMBDA_JANITOR.md)** (see below) — Lambda setup & environment variables
+
+---
+
+## 💰 Cost Breakdown
+
+| Service | Cost | Notes |
+|---------|------|-------|
+| **EC2 m7i-flex.large** | $0.20/hr | Only when running |
+| **S3 Storage** | ~$1-3/mo | 10-30 backups @ 50MB each |
+| **Lambda Invocations** | <$1/mo | 4 invocations/hr × 730 hrs/mo |
+| **Data Transfer** | ~$0.50/mo | <1GB world backup/restore |
+| **Elastic IP** | $0/mo | Free while associated |
+| **Discord Bot** | $0 | Free |
+| **TOTAL** | ~$25-50/mo | (vs $150+ for always-on) |
+
+---
+
+## 🔐 Security
+
+- ✅ **No hardcoded credentials** in source code
+- ✅ **IAM instance roles** (EC2 to S3, no access keys)
+- ✅ **S3 encryption** (AES256)
+- ✅ **Elastic IP** (static address, no DNS guessing)
+- ✅ **.gitignore** prevents .env leaks
+- ⏳ **IAM Roles Anywhere** (future) for Pi certificate-based auth
+
+---
+
+## 🚨 Troubleshooting
+
+### Bot won't connect
+
+```bash
+# Check Discord token
+echo $DISCORD_TOKEN
+
+# Check config loading
+npm run dev 2>&1 | grep -i error
+```
+
+### EC2 won't start
+
+```bash
+# Check instance exists
+aws ec2 describe-instances --instance-ids i-xxxxx
+
+# Check IAM permissions
+aws sts get-caller-identity
+```
+
+### World not restoring
+
+```bash
+# Check S3 bucket
+aws s3 ls s3://bedrock-control-s3-bucket/
+
+# Check IAM role on instance
+aws ec2 describe-instances --instance-ids i-xxxxx | grep Arn
+```
+
+---
+
+## 📝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/something-cool`)
+3. Commit changes with clear messages
+4. Push and create a Pull Request
+
+---
+
+## 📄 License
+
+MIT License — See LICENSE file for details
+
+---
+
+## 🎯 Roadmap
+
+- [ ] Terraform IaC for entire stack
+- [ ] Raspberry Pi deployment guide
+- [ ] IAM Roles Anywhere certificate setup
+- [ ] CloudWatch metrics & alarms
+- [ ] Cloudflare DDNS integration
+- [ ] Web UI dashboard (optional)
+- [ ] Multi-server support
+
+---
+
+<div align="center">
+
+**Made with ❤️ by the Bedrock Control team**
+
+[Issues](https://github.com/DaveTron4/Bedrock-Control/issues) • [Discussions](https://github.com/DaveTron4/Bedrock-Control/discussions) • [Discord Support](https://discord.gg/your-server)
+
+</div>
 │   │   │   └── aws-client.ts   ← AWS EC2 operations
 │   │   ├── types/
 │   │   │   └── index.ts        ← TypeScript interfaces
