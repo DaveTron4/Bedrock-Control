@@ -181,54 +181,54 @@ Expected output:
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
-│  Discord Server                                                 │
-│  ├─ Player types: /start                                        │
-│  └─ Player types: /stop                                         │
-│         │                                                       │
-└─────────┼───────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│                                                                │
+│  Discord Server                                                │
+│  ├─ Player types: /start                                       │
+│  └─ Player types: /stop                                        │
+│         │                                                      │
+└─────────┼──────────────────────────────────────────────────────┘
           │
           ▼
-┌─────────────────────────────────────────────────────────────────┐
+┌────────────────────────────────────────────────────────────────┐
 │ Raspberry Pi (Future: Permanent Control Plane)                 │
-│ ├─ Discord.js Bot (always-on, $5/yr electricity)              │
-│ ├─ IAM Roles Anywhere (X.509 cert auth to AWS)                │
+│ ├─ Discord.js Bot (always-on, $5/yr electricity)               │
+│ ├─ IAM Roles Anywhere (X.509 cert auth to AWS)                 │
 │ └─ Zero long-lived credentials on hardware                     │
-└─────────────────────────────────────────────────────────────────┘
+└────────────────────────────────────────────────────────────────┘
           │
           ├─ (AWS SDK EC2: StartInstances)
           │
           ▼
-┌─────────────────────────────────────────────────────────────────┐
+┌────────────────────────────────────────────────────────────────┐
 │ AWS Account (us-east-1)                                        │
-│                                                                 │
+│                                                                │
 │  ┌────────────────────────────────────────────────────────┐    │
-│  │ EC2: m7i-flex.large (13.223.23.242 - Elastic IP)      │    │
+│  │ EC2: m7i-flex.large (13.223.23.242 - Elastic IP)       │    │
 │  ├─ Minecraft Forge 1.20.1 in Docker                      │    │
 │  ├─ Systemd service (graceful shutdown + S3 backup)       │    │
 │  └─ IAM instance role (S3 GetObject/PutObject)            │    │
 │  └────────────────────────────────────────────────────────┘    │
-│         │ (Backup on stop)                                      │
-│         ▼                                                        │
+│         │ (Backup on stop)                                     │
+│         ▼                                                      │
 │  ┌────────────────────────────────────────────────────────┐    │
 │  │ S3: bedrock-control-s3-bucket                          │    │
 │  ├─ world.tar.gz (latest world backup)                    │    │
 │  ├─ backups/world-{timestamp}.tar.gz (30-day history)     │    │
 │  └─ AES256 encryption enabled                             │    │
 │  └────────────────────────────────────────────────────────┘    │
-│         │                                                        │
-│         └─ (Restore on start)                                   │
-│                                                                 │
+│         │                                                      │
+│         └─ (Restore on start)                                  │
+│                                                                │
 │  ┌────────────────────────────────────────────────────────┐    │
-│  │ Lambda: Janitor (triggered every 15 min via EventBridge) │  │
+│  │ Lambda: Janitor (triggered every 15 min)               │    │
 │  ├─ RCON query to EC2: "How many players?"                │    │
 │  ├─ Tag EC2 with idle timestamp                           │    │
 │  ├─ If idle > 20 min → StopInstances + Discord webhook    │    │
 │  └─ Clears idle tag if players online                     │    │
 │  └────────────────────────────────────────────────────────┘    │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+│                                                                │
+└────────────────────────────────────────────────────────────────┘
 ```
 
 ---
