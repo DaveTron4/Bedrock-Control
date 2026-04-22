@@ -76,10 +76,11 @@
 - S3 world persistence (auto-backup/restore)
 - Elastic IP + IAM security
 - Git deployment pipeline (`deploy.sh`)
-- Complete documentation (README, AWS_SETUP, DEPLOYMENT)
+- **Lambda Janitor** (auto-shutdown after idle, EventBridge scheduled)
+- Complete documentation (README, AWS_SETUP, DEPLOYMENT, LAMBDA_JANITOR)
 
 ### 🟡 In Progress
-- Lambda Janitor (code ✅, EventBridge setup ⏳)
+- Production threshold testing (currently 1 min idle for testing)
 
 ### ⏳ Future
 - Raspberry Pi control plane
@@ -185,25 +186,29 @@ These commands are **forbidden** via RCON (use `/start` and `/stop` instead):
 
 ```
 Discord Server
-  └─ Player: /start
-        │
-        ▼
-  Control Plane (Bot)
-  └─ AWS SDK: StartInstances
-        │
-        ▼
-  EC2 (13.223.23.242:25565)
-  ├─ Forge 1.20.1 in Docker
-  └─ S3: Auto-backup on stop
-        │
-        ▼
-  Lambda (every 15 min)
-  ├─ RCON: "How many players?"
-  ├─ If idle 20+ min:
-  │  ├─ StopInstances
-  │  └─ Discord: "Auto-stopped"
-  └─ If players online:
-     └─ Clear idle timer
+  ├─ Player: /start
+  │      │
+  │      ▼
+  │  Bot (HTTP listener on :3000)
+  │  └─ AWS SDK: StartInstances
+  │        │
+  │        ▼
+  │  EC2 (13.223.23.242:25565)
+  │  ├─ Forge 1.20.1 in Docker
+  │  └─ S3: Auto-backup on stop
+  │
+  └─ (via Lambda notification)
+
+EventBridge (every 15 min, or 1 min for testing)
+  └─ Lambda Janitor
+     ├─ EC2 DescribeInstances
+     ├─ RCON "list" query (player count)
+     ├─ EC2 tag tracking (mc:idle-since)
+     │
+     └─ If idle > threshold (20 min prod, 1 min test):
+        ├─ StopInstances
+        ├─ POST to Bot HTTP endpoint
+        └─ Discord: "⚠️ Server idle, auto-stopping"
 ```
 
 ---
@@ -218,8 +223,10 @@ Bedrock-Control/
 │   ├── src/utils/         # config, logger, types
 │   └── .env               # Config (git-ignored)
 │
-├── lambda/janitor/        # Auto-shutdown Lambda (TypeScript)
-│   └── src/index.ts       # RCON player check + idle tagging
+├── lambda/janitor/        # Auto-shutdown Lambda (TypeScript) ✅
+│   ├── src/index.ts       # RCON player check + idle tagging
+│   ├── ec2-policy.json    # IAM policy for Lambda execution
+│   └── dist/index.js      # Compiled JS (esbuild)
 │
 ├── infra/
 │   ├── scripts/           # bootstrap.sh, deploy.sh, backup*.sh
@@ -249,7 +256,8 @@ bash ~/Bedrock-Control/infra/deploy.sh  # EC2: one-command deploy
 
 - **[AWS_SETUP.md](AWS_SETUP.md)** — S3, IAM, EC2, Elastic IP setup
 - **[DEPLOYMENT.md](infra/DEPLOYMENT.md)** — Git workflow & troubleshooting
-- **[LAMBDA_JANITOR.md](LAMBDA_JANITOR.md)** — Auto-shutdown Lambda guide
+- **[LAMBDA_JANITOR.md](LAMBDA_JANITOR.md)** — Auto-shutdown Lambda deployment & testing
+- **[BOT_INTEGRATION.md](BOT_INTEGRATION.md)** — Lambda HTTP notifications to Discord
 
 ---
 
