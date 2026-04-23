@@ -5,6 +5,7 @@ WORKDIR /data
 # Copy server configuration files
 COPY eula.txt .
 COPY server.properties .
+COPY server-icon.png .
 COPY ops.json .
 COPY whitelist.json .
 COPY banned-players.json .
