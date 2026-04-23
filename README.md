@@ -1,17 +1,26 @@
-# Bedrock Control 🎮☁️
-
 <div align="center">
 
-![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=flat-square&logo=amazon-aws&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-%23007ACC.svg?style=flat-square&logo=typescript&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-%230db7ed.svg?style=flat-square&logo=docker&logoColor=white)
-![Minecraft](https://img.shields.io/badge/Minecraft-Forge%201.20.1-%2302A029?style=flat-square&logo=minecraft&logoColor=white)
-![Discord.js](https://img.shields.io/badge/Discord.js-v14-%235865F2.svg?style=flat-square&logo=discord&logoColor=white)
-![S3](https://img.shields.io/badge/S3%20Persistence-Enabled-brightgreen?style=flat-square)
-![Elastic IP](https://img.shields.io/badge/Elastic%20IP-13.223.23.242-blue?style=flat-square)
-![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)
+<div style="display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 20px;">
+  <img src="./img/server-icon.jpg" alt="Bedrock Control Icon" style="width: 80px; height: 80px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); transition: transform 0.3s ease;">
+  <h1 style="font-size: 2.5em; margin: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Bedrock Control</h1>
+</div>
 
 **On-demand Minecraft orchestration via Discord — pay only when playing**
+
+[![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=flat-square&logo=amazon-aws&logoColor=white)](https://aws.amazon.com)
+[![TypeScript](https://img.shields.io/badge/TypeScript-%23007ACC.svg?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Docker](https://img.shields.io/badge/Docker-%230db7ed.svg?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com)
+[![Minecraft](https://img.shields.io/badge/Minecraft-Forge%201.20.1-%2302A029?style=flat-square&logo=minecraft&logoColor=white)](https://files.minecraftforge.net)
+[![Discord.js](https://img.shields.io/badge/Discord.js-v14-%235865F2.svg?style=flat-square&logo=discord&logoColor=white)](https://discord.js.org)
+[![S3](https://img.shields.io/badge/S3%20Persistence-Enabled-brightgreen?style=flat-square)](https://aws.amazon.com/s3)
+[![Elastic IP](https://img.shields.io/badge/Elastic%20IP-13.223.23.242-blue?style=flat-square)](https://aws.amazon.com/ec2)
+[![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
+
+</div>
+
+![Bedrock Control Banner](img/firstpic.png)
+
+<div align="center">
 
 [Features](#-features) • [Quick Start](#-quick-start) • [Architecture](#-architecture) • [Deployment](#-deployment) • [Docs](#-documentation)
 
